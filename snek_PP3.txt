@@ -1,0 +1,258 @@
+#Snek
+import math
+import random
+import pygame
+import tkinter as tk
+from tkinter import messagebox
+
+class cube(object):
+    rows = 20
+    w = 500
+    def __init__(self,start,x=1,y=0,color=(0,255,0)):
+        self.pos = start
+        self.x = 1
+        self.y = 0
+        self.color = color
+
+        
+    def move(self, x, y):
+        self.x = x
+        self.y = y
+        self.pos = (self.pos[0] + self.x, self.pos[1] + self.y)
+
+    def draw(self, surface, eyes=False):
+        dis = self.w // self.rows
+        i = self.pos[0]
+        j = self.pos[1]
+
+        pygame.draw.rect(surface, self.color, (i*dis+1,j*dis+1, dis-2, dis-2))
+        if eyes:
+            centre = dis//2
+            radius = 3
+            circleMiddle = (i*dis+centre-radius,j*dis+8)
+            circleMiddle2 = (i*dis + dis -radius*2, j*dis+8)
+            pygame.draw.circle(surface, (255,0,0), circleMiddle, radius)
+            pygame.draw.circle(surface, (255,0,0), circleMiddle2, radius)
+        
+
+
+# SNEK CODE BELOW HERE----------------------------
+class snek(object):
+    body = []
+    turns = {}
+    def __init__(self, color, pos):
+        self.color = color
+        self.head = cube(pos)
+        self.body.append(self.head)
+        self.x = 0
+        self.y = 1
+# SNEK CODE ABOVE HERE-----------------------------
+
+# DIRECTIONAL CODE BELOW HERE----------------------
+    def move(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+            keys = pygame.key.get_pressed()
+
+            for key in keys:
+                if keys[pygame.K_LEFT]:
+                    self.x = -1
+                    self.y = 0
+                    self.turns[self.head.pos[:]] = [self.x, self.y]
+
+                elif keys[pygame.K_RIGHT]:
+                    self.x = 1
+                    self.y = 0
+                    self.turns[self.head.pos[:]] = [self.x, self.y]
+
+                elif keys[pygame.K_UP]:
+                    self.x = 0
+                    self.y = -1
+                    self.turns[self.head.pos[:]] = [self.x, self.y]
+
+                elif keys[pygame.K_DOWN]:
+                    self.x = 0
+                    self.y = 1
+                    self.turns[self.head.pos[:]] = [self.x, self.y]
+
+        for i, c in enumerate(self.body):
+            p = c.pos[:]
+            if p in self.turns:
+                turn = self.turns[p]
+                c.move(turn[0],turn[1])
+                if i == len(self.body)-1:
+                    self.turns.pop(p)
+            else:
+                if c.x == -1 and c.pos[0] <= 0: c.pos = (c.rows-1, c.pos[1])
+                elif c.x == 1 and c.pos[0] >= c.rows-1: c.pos = (0,c.pos[1])
+                elif c.y == 1 and c.pos[1] >= c.rows-1: c.pos = (c.pos[0], 0)
+                elif c.y == -1 and c.pos[1] <= 0: c.pos = (c.pos[0],c.rows-1)
+                else: c.move(c.x,c.y)
+# DIRECTIONAL CODE ABOVE HERE---------------------
+
+# GAME RESET CODE BELOW HERE----------------------
+    def reset(self, pos):
+        self.head = cube(pos)
+        self.body = []
+        self.body.append(self.head)
+        self.turns = {}
+        self.x = 0
+        self.y = 1
+# GAME RESET CODE ABOVE HERE-----------------------
+
+# ADD TAIL CODE BELOW HERE-------------------------
+    def addCube(self):
+        tail = self.body[-1]
+        dx, dy = tail.x, tail.y
+
+        if dx == 1 and dy == 0:
+            self.body.append(cube((tail.pos[0]-1,tail.pos[1])))
+        elif dx == -1 and dy == 0:
+            self.body.append(cube((tail.pos[0]+1,tail.pos[1])))
+        elif dx == 0 and dy == 1:
+            self.body.append(cube((tail.pos[0],tail.pos[1]-1)))
+        elif dx == 0 and dy == -1:
+            self.body.append(cube((tail.pos[0],tail.pos[1]+1)))
+
+        self.body[-1].x = dx
+        self.body[-1].y = dy
+# ADD TAIL CODE ABOVE HERE------------------------
+
+
+# MINUS TAIL CODE BELOW HERE FOR PP3----------------------
+    def minusCube(self):
+        tail = self.body[-1]
+        dx2, dy2 = tail.x, tail.y
+
+        if dx2 == 1 and dy2 == 0:
+            del self.body[-1]
+        elif dx2 == -1 and dy2 == 0:
+            del self.body[-1]
+        elif dx2 == 0 and dy2 == 1:
+            del self.body[-1]
+        elif dx2 == 0 and dy2 == -1:
+            del self.body[-1]
+
+        self.body[-1].x = dx2
+        self.body[-1].y = dy2
+        
+
+# MINUS TAIL CODE ABOVE HERE FOR PP3---------------------
+        
+# DRAW CODE BELOW HERE----------------------------
+    def draw(self, surface):
+        for i, c in enumerate(self.body):
+            if i ==0:
+                c.draw(surface, True)
+            else:
+                c.draw(surface)
+# DRAW CODE ABOVE HERE----------------------------
+
+
+# DEFINE GRID CODE BELOW HERE---------------------
+def drawGrid(w, rows, surface):
+    sizeBetween = w // rows
+
+    x = 0
+    y = 0
+    for l in range(rows):
+        x = x + sizeBetween
+        y = y + sizeBetween
+
+        pygame.draw.line(surface, (169,169,169), (x,0),(x,w))
+        pygame.draw.line(surface, (169,169,169), (0,y),(w,y))
+# DEFINE GRID CODE ABOVE HERE---------------------
+
+
+# DEFINE SURFACE CODE BELOW HERE------------------
+def redrawWindow(surface):
+    global rows, width, s, apple, apple2 #FOR PP3
+    surface.fill((0,0,0))
+    s.draw(surface)
+    apple.draw(surface)
+    apple2.draw(surface) #FOR PP3
+    drawGrid(width,rows, surface)
+    pygame.display.update()
+# DEFINE SURFACE CODE ABOVE HERE-------------------
+
+# DEFINE RANDOM APPLE BELOW HERE-------------------------
+def randomApple(rows, item):
+
+    positions = item.body
+
+    while True:
+        x = random.randrange(rows)
+        y = random.randrange(rows)
+        if len(list(filter(lambda z:z.pos == (x,y), positions))) > 0:
+            continue
+        else:
+            break
+        
+    return (x,y)
+
+def randomApple2(rows, item): #FOR PP3
+
+    positions = item.body
+
+    while True:
+        x = random.randrange(rows)
+        y = random.randrange(rows)
+        if len(list(filter(lambda z:z.pos == (x,y), positions))) > 0:
+            continue
+        else:
+            break
+        
+    return (x,y)
+
+# DEFINE GAME OVER BELOW HERE----------------------
+def message_box(subject, content):
+    root = tk.Tk()
+    root.attributes("-topmost", True)
+    root.withdraw()
+    messagebox.showinfo(subject, content)
+    try:
+        root.destroy()
+    except:
+        pass
+# DEFINE GAME OVER ABOVE HERE----------------------
+
+# MAIN LOOP CODE BELOW HERE------------------------
+def main():
+    global width, rows, s, apple, apple2
+    width = 500
+    rows = 20
+    win = pygame.display.set_mode((width, width))
+    pygame.display.set_caption('Snek')
+    s = snek((255,0,0), (10,10))
+    apple = cube(randomApple(rows, s), color=(255,0,0))
+    apple2 = cube(randomApple2(rows, s), color=(0,0,255)) #FOR PP3
+    flag = True
+
+    clock = pygame.time.Clock()
+    
+    while flag:
+        pygame.time.delay(50)
+        clock.tick(10)
+        s.move()
+        if s.body[0].pos == apple.pos:
+            s.addCube()
+            apple = cube(randomApple(rows, s), color=(255,0,0))
+        if s.body[0].pos == apple2.pos: #FOR PP3
+            s.minusCube()
+            apple2 = cube(randomApple2(rows, s), color=(0,0,255))
+
+
+        for x in range(len(s.body)):
+            if s.body[x].pos in list(map(lambda z:z.pos,s.body[x+1:])):
+                print('Score: ', len(s.body))
+                message_box('Game Over! GGWP!', 'Play again?')
+                s.reset((10,10))
+                break
+# MAIN LOOP CODE ABOVE HERE------------------------
+            
+        redrawWindow(win)
+
+main()
+
